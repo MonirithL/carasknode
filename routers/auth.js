@@ -56,7 +56,7 @@ async function requireAuthCheck(req, res, next) {
 authRouter.get("/guest", async (req, res)=>{
 
         const guest = await create_guest();
-        const guest_access_token = jwt.sign(guest,SECRET, {expiresIn:"1h"});
+        const guest_access_token = jwt.sign(guest,SECRET, {expiresIn:"20m"});
         res.cookie('guest_access_token', guest_access_token,{ httpOnly: true, secure: SET_HTTPS, sameSite: "lax" });
         res.status(200).json({message:"Signed in as Guest"});
     
@@ -130,6 +130,7 @@ authRouter.post("/callback", (req, res) => {
 });
 
 authRouter.post('/logout', requireAuthCheck, (req,res)=>{
+    console.log("logout")
     res.clearCookie('refresh-token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
     res.clearCookie('access-token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
     res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
