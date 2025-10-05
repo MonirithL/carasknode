@@ -30,7 +30,7 @@ async function get_guest(user_uuid){
 
 function cleanupGuests() {
   const now = Date.now();
-  const oneDay = 24 * 60 * 60 * 1000; // 1 day in ms
+  const oneDay =  30 * 60 * 1000; // 30min in ms
 
   for (const [id, guest] of guest_users) {
     const createdTime = new Date(guest.createdAt).getTime();

@@ -3,10 +3,14 @@ const path = require('path')
 const fs = require("fs");
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const https = require('https')
 require('./services/cache_guest')
+
+const RUNHOST = "0.0.0.0"
+
 const app = express();
 app.use(cors({
-  origin: ['http://localhost:5173',"http://192.168.225.52:5173/"],
+  origin: ['http://localhost:5173',"http://192.168.201.52:5173/"],
   credentials: true,
 }))
 
@@ -48,7 +52,24 @@ app.get("/logs", (req, res) => {
   }
 });
 
-app.listen(PORT,()=>{
-    console.log(`index js listening on port http://localhost:${PORT}/`);
-})
+
+
+
+
+if(process.env.NODE_ENV === "production"){
+  https.createServer(
+    {
+      key: fs.readFileSync('./certs/192.168.201.52-key.pem'),
+      cert: fs.readFileSync('./certs/192.168.201.52.pem')
+    },
+    app
+  ).listen(PORT,RUNHOST,()=>console.log(`index js listening on port https://localhost:${PORT}/`));
+}else{
+  app.listen(PORT, RUNHOST,()=>{
+      console.log(`index js listening on port http://localhost:${PORT}/`);
+  })
+}
+// app.listen(PORT,()=>{
+//     console.log(`index js listening on port http://localhost:${PORT}/`);
+// })
 

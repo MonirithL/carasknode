@@ -10,20 +10,31 @@ authRouter.use(express.json());
 
 const SECRET = process.env.JWT_SECRET;
 // need passport oauth, jwt
-const SET_HTTPS = false;
+const SET_HTTPS = process.env.NODE_ENV === 'production';
+const SAMESITE = process.env.NODE_ENV == 'production'?"none":"lax";
 
 
 async function requireAuthCheck(req, res, next) {
-    console.log("RAN AUTH CHECK")
+    console.log("--------Start running aiuth check: ")
     if(req.cookies['guest_access_token'] && !req.cookies['access-token']){
         let guest_payload;
         try{
             guest_payload = jwt.verify(req.cookies['guest_access_token'], SECRET);
-            const guest = get_guest(guest_payload.id);
+            console.log("           Guest jwt is okay!")
+            const guest = await get_guest(guest_payload.id);
+            console.log("           Comparing guest in db!")
+            if (!guest) {
+                console.log("------No guest! clearing cookie")
+                res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+                return res.status(401).json({ error: "Session expired, please log in again" });
+            }
+            console.log("------is guest! Continue")
             req.user = guest;
             return next();
         }catch(err){
-            res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
+            console.log("------cannot verify jwt, clearing cookie")
+            res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+            return res.status(401).json({ error: "Session expired, please log in again" });
         }
     }else{
         const accessToken = req.cookies['access-token'];
@@ -56,11 +67,10 @@ async function requireAuthCheck(req, res, next) {
 authRouter.get("/guest", async (req, res)=>{
 
         const guest = await create_guest();
-        const guest_access_token = jwt.sign(guest,SECRET, {expiresIn:"20m"});
-        res.cookie('guest_access_token', guest_access_token,{ httpOnly: true, secure: SET_HTTPS, sameSite: "lax" });
+        const guest_access_token = jwt.sign(guest,SECRET, {expiresIn:"1h"});
+        res.cookie('guest_access_token', guest_access_token,{ httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
         res.status(200).json({message:"Signed in as Guest"});
     
-        res.status(400).json({message:"token already exists"})
     
 })
 
@@ -90,7 +100,7 @@ authRouter.get(`/login/google`, async (req, res)=>{
     const next = req.query.next ?? "/";
 
   const redirectTo = encodeURIComponent(`http://localhost:5173/auth/callback?next=${encodeURIComponent(next)}`);
-
+    console.log("login google")
   const url =
     `${process.env.SUPABASE_URL}/auth/v1/authorize` +
     `?provider=google` +
@@ -124,16 +134,16 @@ authRouter.post("/callback", (req, res) => {
   }
 
   // Set HttpOnly cookies
-  res.cookie("access-token", accessToken, { httpOnly: true, secure: SET_HTTPS, sameSite: "lax" });
-  res.cookie("refresh-token", refreshToken, { httpOnly: true, secure: SET_HTTPS, sameSite: "lax" });
+  res.cookie("access-token", accessToken, { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+  res.cookie("refresh-token", refreshToken, { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
   res.status(200).send("okay");
 });
 
 authRouter.post('/logout', requireAuthCheck, (req,res)=>{
     console.log("logout")
-    res.clearCookie('refresh-token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
-    res.clearCookie('access-token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
-    res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: 'lax' });
+    res.clearCookie('refresh-token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+    res.clearCookie('access-token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+    res.clearCookie('guest_access_token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
     res.status(200).json({ message: 'Logged out successfully' });
 })
 
