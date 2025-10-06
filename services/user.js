@@ -1,6 +1,6 @@
 const {createSupabaseService, createSupabaseWithToken} = require('../cores/supabase')
 
-async function requireUserId(req,res,next){
+async function requireDBUser(req,res,next){
     const token = req.cookies['access-token'];
     const refresh = req.cookies['refresh-token'];
     if(token && refresh){
@@ -11,7 +11,7 @@ async function requireUserId(req,res,next){
         return next();
     }else{
         req.db_user = null;
-        return next;
+        return next();
     }
     
 }
@@ -81,9 +81,31 @@ async function getUser( auth_id,token, refresh){
     }
 }
 
-async function updateUser() {
-    //get new users info then update it
-    //
+async function updateUser(auth_id, token, refresh, usernameN, profile_imgN) {
+  const supabase = createSupabaseWithToken(token, refresh);
+
+  // build update object dynamically
+  const updateObj= {};
+  if (usernameN) updateObj.name = usernameN;
+  if (profile_imgN) updateObj.profile_img = profile_imgN;
+
+  if (Object.keys(updateObj).length === 0) {
+    // nothing to update
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("dataUser")
+    .update(updateObj)
+    .eq("auth_id", auth_id)
+    .select();
+
+  if (error) {
+    console.log("UPDATE USER ERR: ", error);
+    return null;
+  } else {
+    return data;
+  }
 }
 
-module.exports = {createUser, getUser, requireUserId}
+module.exports = {createUser, getUser, requireDBUser, updateUser}

@@ -3,7 +3,7 @@ const logger = require('../services/logger')
 const jwt = require('jsonwebtoken');
 const {create_guest, get_guest} = require('../services/cache_guest');
 const {anonSupabase} = require('../cores/supabase')
-const{createUser, requireUserId} = require('../services/user')
+const{createUser, requireDBUser} = require('../services/user')
 
 const authRouter = express.Router();
 authRouter.use(express.json());
@@ -57,6 +57,8 @@ async function requireAuthCheck(req, res, next) {
                 secure:SET_HTTPS,
             })
             user = data.session.user;
+        }else if(error && !refreshToken){
+            return res.status(401).json({ error: "Cannot reach supabase Client" });
         }
         req.user = data.user;
         return next();
