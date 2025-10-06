@@ -11,6 +11,7 @@ async function create_guest(){
     }
     const guest = {
     id,
+    type:"guest",
     email:`guest${id}@gmail.com`, 
     username:`Guest ${id}`,
     avatar_url:null,        
@@ -28,9 +29,9 @@ async function get_guest(user_uuid){
     }
 }
 
-function cleanupGuests() {
+async function cleanupGuests() {
   const now = Date.now();
-  const oneDay =  30 * 60 * 1000; // 30min in ms
+  const oneDay =  60 * 60 * 1000; // 30min in ms
 
   for (const [id, guest] of guest_users) {
     const createdTime = new Date(guest.createdAt).getTime();
@@ -45,5 +46,11 @@ function cleanupGuests() {
 
 
 // cron.schedule('0 0 * * *', cleanupGuests);
-cron.schedule('*/60 * * * * *', cleanupGuests); 
+cron.schedule('*/60 * * * * *', async()=>{
+  try{
+    await cleanupGuests();
+  }catch(err){
+    console.log("cronnerr clean guests: ", err)
+  }
+}); 
 module.exports = {create_guest, get_guest}

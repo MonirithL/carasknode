@@ -15,13 +15,13 @@ app.use(cors({
 }))
 
 const {authRouter} = require(`./routers/auth`);
-const userRouter = require('./user');
 const testRouter = require('./test')
+const {userRouter} = require('./routers/user')
 
 app.use(cookieParser());
-app.use("/auth", authRouter);
-app.use('/user', userRouter);
+app.use('/auth', authRouter);
 app.use('/test', testRouter);
+app.use('/user',userRouter);
 const PORT = 3000;
 
 
