@@ -3,17 +3,26 @@ const {createSupabaseService, createSupabaseWithToken} = require('../cores/supab
 async function requireDBUser(req,res,next){
     const token = req.cookies['access-token'];
     const refresh = req.cookies['refresh-token'];
+     if (!token || !refresh) {
+      return res.status(401).json({ error: "Missing authentication tokens" });
+    }
+
     if(token && refresh){
-        const user_auth_id = req.user.id;
-        console.log(user_auth_id);
+        const user_auth_id = req.user?.id;
+        console.log("(ReqDBuser)IMPORTANT: ", user_auth_id)
         const db_user = await getUser(user_auth_id, token, refresh);
         req.db_user = db_user;
+        if(db_user!=null){
+          req.access = token;
+          req.refresh = refresh;
+        }else{
+          return res.status(403).json({ error: "Invalid or unknown user" });
+        }
         return next();
     }else{
         req.db_user = null;
         return next();
     }
-    
 }
 
 
@@ -34,7 +43,7 @@ async function createUser(id, fullname, email) {
   }
 
   if (existingUser) {
-    console.log('User already exists:', existingUser);
+    // console.log('User already exists:', existingUser);
     return existingUser; // return existing user, don't insert
   }
 
@@ -56,7 +65,7 @@ async function createUser(id, fullname, email) {
     return null;
   }
 
-  console.log('Inserted user:', data);
+  console.log('Inserted user:', data.id);
   return data;
 }
 
@@ -76,7 +85,7 @@ async function getUser( auth_id,token, refresh){
         console.log("failed getting user", fetchError);
         return null;
     }else{
-        console.log("s.getUser: ", JSON.stringify(user))
+        console.log("s.getUser: ", JSON.stringify(user.id))
         return user;
     }
 }

@@ -17,11 +17,19 @@ app.use(cors({
 const {authRouter} = require(`./routers/auth`);
 const testRouter = require('./test')
 const {userRouter} = require('./routers/user')
+const geminiRouter = require('./routers/geminiRouter')
+const sessionRouter = require('./routers/sessionRouter')
+const qnaRouter = require('./routers/qnaRouter')
+const questionRouter = require('./routers/questionRouter')
 
 app.use(cookieParser());
 app.use('/auth', authRouter);
 app.use('/test', testRouter);
 app.use('/user',userRouter);
+app.use("/gemini", geminiRouter);
+app.use("/session", sessionRouter);
+app.use("/qna", qnaRouter);
+app.use("/question", questionRouter);
 const PORT = 3000;
 
 

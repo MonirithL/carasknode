@@ -173,5 +173,14 @@ authRouter.get('/logout', requireAuthCheck, (req,res)=>{
     }
     res.status(200).json({ message: 'Logged out successfully' });
 })
-
+authRouter.get("/logout/guest", requireAuthCheck, (req, res)=>{
+    if(req.cookies['access-token']){
+        res.clearCookie('access-token', { httpOnly: true, secure: SET_HTTPS, sameSite: SAMESITE });
+        res.status(200).json({message:"Logout guest successful"})
+    }else{
+        res.status(404).json({message:"You are not a guest!"})
+    }
+    
+    
+})
 module.exports = {authRouter, requireAuthCheck}
