@@ -52,6 +52,7 @@ async function getResults(access, refresh){
 }
 
 async function getResultBySessionID(access, refresh, sid){
+    console.log("Grbsid: ", sid)
     const db = createSupabaseWithToken(access, refresh);
 
     const { data: existing, error: selectError } = await db

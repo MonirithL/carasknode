@@ -1,5 +1,5 @@
 const {createSupabaseWithToken} = require('../cores/supabase')
-const TABLE = 'user_progress';
+const TABLE = 'progress';
 async function getProgress(access, refresh, aid){
     const db = createSupabaseWithToken(access, refresh);
 
@@ -21,7 +21,8 @@ async function getProgresses(access, refresh){
     const db = createSupabaseWithToken(access, refresh);
 
     const {data: Progresss, error} = await db.from(TABLE)
-    .select('*');
+    .select('*')
+    .order('created_at', {ascending:false});
 
     if(error){
         console.log("GET q Progresses err: ", error);
@@ -33,14 +34,13 @@ async function getProgresses(access, refresh){
     
 }
 
-async function addProgress(access, refresh, auth_id, item_name, completed){
+async function addProgress(access, refresh, item_name, gid){
     const db = createSupabaseWithToken(access, refresh);
     const {data,error} = await db.from(TABLE)
     .insert([{
-        auth_id:auth_id,
-        item_name:item_name,
-        completed:completed
-    }]).select("id");
+        text:item_name,
+        goal_id:gid
+    }]).select("*").single();
     if(error){
         console.log("INSERT Progress err: ", error)
         return null;

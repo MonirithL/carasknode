@@ -1,6 +1,6 @@
 const {createSupabaseWithToken} = require('../cores/supabase')
-const TABLE = 'userGoal';
-async function getGoal(access, refresh, gid){
+const TABLE = 'goal';
+async function getGoal(access, refresh){
     const db = createSupabaseWithToken(access, refresh);
 
     const {data: Goal, error} = await db.from(TABLE)
@@ -17,11 +17,11 @@ async function getGoal(access, refresh, gid){
     
 }
 
-async function updateGoal(access, refresh, gid, goal) {
+async function updateGoal(access, refresh, gid, career) {
     const db = createSupabaseWithToken(access, refresh);
     const {data:Goal, error} = await db.from(TABLE)
     .update({
-        goal:goal
+        career:career
     }).eq('id', gid)
     .select()
     .single();
@@ -35,10 +35,10 @@ async function updateGoal(access, refresh, gid, goal) {
 }
 
 
-async function addGoal(access, refresh, auth_id){
+async function addGoal(access, refresh, career){
     const db = createSupabaseWithToken(access, refresh);
     const {data,error} = await db.from(TABLE)
-    .insert([{auth_id:auth_id}]).select("id");
+    .insert([{career:career}]).select().single();
     if(error){
         console.log("INSERT Goal err: ", error)
         return null;

@@ -46,6 +46,22 @@ async function addSession(access, refresh){
         return data[0];
     }
 }
+async function completeSession(access, refresh, sid){
+    const db = createSupabaseWithToken(access, refresh);
+    const {data,error} = await db.from(TABLE)
+    .update({
+        completed:true
+    }).eq("id", sid)
+    .select("*")
+    .maybeSingle();
+    if(error){
+        console.log("Complete session session err: ", error)
+        return null;
+    }else{
+        console.log("Complete session OKAY: ", JSON.stringify(data))
+        return data;
+    }
+}
 
 async function deleteSession(access, refresh, sid){
     const db = createSupabaseWithToken(access, refresh);
@@ -62,4 +78,25 @@ async function deleteSession(access, refresh, sid){
         return deleted;
     }
 }
-module.exports = {getSession, getSessions, addSession, deleteSession}
+
+async function getLastCompletedSession(access, refresh){
+
+    const db = createSupabaseWithToken(access, refresh);
+
+    const {data: session, error} = await db.from(TABLE)
+    .select('*')
+    .eq('completed', true)
+    .order('created_at', {ascending:false})
+    .limit(1)
+    .maybeSingle();
+
+    if(error){
+        console.log("GET 1 last competed session err: ", error);
+        return null;
+    }else{
+        console.log("GET 1 lcs session OKAY");
+        return session
+    }
+
+}
+module.exports = {getSession, getSessions, addSession, deleteSession, completeSession, getLastCompletedSession}

@@ -21,6 +21,9 @@ const geminiRouter = require('./routers/geminiRouter')
 const sessionRouter = require('./routers/sessionRouter')
 const qnaRouter = require('./routers/qnaRouter')
 const questionRouter = require('./routers/questionRouter')
+const goalRouter = require('./routers/userGoalRouter')
+const resultRouter = require('./routers/userResultRouter')
+const progressRouter = require('./routers/userProgressRouter')
 
 app.use(cookieParser());
 app.use('/auth', authRouter);
@@ -30,6 +33,9 @@ app.use("/gemini", geminiRouter);
 app.use("/session", sessionRouter);
 app.use("/qna", qnaRouter);
 app.use("/question", questionRouter);
+app.use("/goal", goalRouter);
+app.use("/result", resultRouter);
+app.use("/progress", progressRouter);
 const PORT = 3000;
 
 

@@ -12,12 +12,8 @@ async function requireDBUser(req,res,next){
         console.log("(ReqDBuser)IMPORTANT: ", user_auth_id)
         const db_user = await getUser(user_auth_id, token, refresh);
         req.db_user = db_user;
-        if(db_user!=null){
-          req.access = token;
-          req.refresh = refresh;
-        }else{
-          return res.status(403).json({ error: "Invalid or unknown user" });
-        }
+        if(db_user==null)return res.status(403).json({ error: "Invalid or unknown user" });
+        
         return next();
     }else{
         req.db_user = null;

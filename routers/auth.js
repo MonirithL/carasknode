@@ -37,12 +37,14 @@ async function requireAuthCheck(req, res, next) {
             return res.status(401).json({ error: "Session expired, please log in again" });
         }
     }else{
-        const accessToken = req.cookies['access-token'];
-        const refreshToken = req.cookies['refresh-token'];
+        let accessToken = req.cookies['access-token'];
+        let refreshToken = req.cookies['refresh-token'];
         if(!accessToken || !refreshToken){
             return res.status(401).json({error:"no session found"});
         }
         const {data, error} = await anonSupabase.auth.getUser(accessToken);
+        const access = accessToken;
+        const refresh = refreshToken;
         if(error && refreshToken){
             const { data, re_error: refreshError } = await anonSupabase.auth.refreshSession({refresh_token:refreshToken});
             if(refreshError || !data.session){
@@ -57,10 +59,14 @@ async function requireAuthCheck(req, res, next) {
                 secure:SET_HTTPS,
             })
             user = data.session.user;
+            access = data.session.access_token;
+            refresh = data.session.refresh_token;
         }else if(error && !refreshToken){
             return res.status(401).json({ error: "Cannot reach supabase Client" });
         }
         req.user = data.user;
+        req.access = access;
+        req.refresh = refresh;
         return next();
     }
     

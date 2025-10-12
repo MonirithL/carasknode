@@ -4,7 +4,7 @@ const ai = new GoogleGenAI({
 });
 
 async function getText() {
-  const prompt = `Generate a JSON array of 3 careers that I might fit and 3 that I might not fit if I am good at math, not very athletic, know a bit about construction.
+  const prompt = `Generate a JSON array of 3 careers that I might fit and 2 might not fit.
 Each career should be an object with the following keys:
 - "title": name of the job(string)
 - "fit": true or false meaning fit or not fit (boolean)
@@ -34,6 +34,39 @@ Return ONLY the JSON array, with no extra text, explanation, or markdown formatt
   } catch (error) {
     console.error("Gemini error:", error);
     return "Gemini not working";
+  }
+}
+async function getRecommended(careerText, alreadyDoing) {
+  const prompt = `Generate a JSON array of 6 strings.
+Each strings should be 2 to 5 words max. They are about things that user can do to improve their ability toward a certain career.
+the career is ${careerText}.
+and they already did ${JSON.stringify(alreadyDoing)}
+
+Note that there should be 6 recommended items of type string returned!
+Return ONLY the JSON array, with no extra text, explanation, or markdown formatting.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config:{"response_mime_type": "application/json"}
+    });
+
+    if (response && response.text && response.text.length > 0) {
+        try{
+            const text = response.text.replace(/```json|```/g, "").trim();
+            const json_text = JSON.parse(text);
+            return ({result:json_text})
+        }catch(error){
+            console.log("GEMINI is NOT json RC ",error)
+        }
+      return response.text
+    } else {
+      return "Gemini returned empty response RC";
+    }
+  } catch (error) {
+    console.error("Gemini error RC:", error);
+    return "Gemini not working RC";
   }
 }
 
@@ -81,4 +114,4 @@ async function genResult(qna_full){
   }
 }
 
-module.exports = {getText, genResult}
+module.exports = {getText, genResult, getRecommended}
