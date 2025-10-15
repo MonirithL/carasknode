@@ -1,4 +1,5 @@
-const {createSupabaseWithToken} = require('../cores/supabase')
+const {createSupabaseWithToken} = require('../cores/supabase');
+const { getAnswer } = require('./answerService');
 const TABLE = 'qna';
 async function getQna(access, refresh, qid){
     const db = createSupabaseWithToken(access, refresh);
@@ -37,9 +38,9 @@ async function addQna(access, refresh, qid, aid, sid){
     const db = createSupabaseWithToken(access, refresh);
     const {data,error} = await db.from(TABLE)
     .insert([{
-        question_id: qid,
-        answer_id, aid,
-        session_id, sid
+        qid: qid,
+        aid: aid,
+        session_id: sid
     }]).select("id");
     if(error){
         console.log("INSERT Qna err: ", error)
@@ -50,11 +51,11 @@ async function addQna(access, refresh, qid, aid, sid){
     }
 }
 
-async function deleteQna(access, refresh, sid){
+async function deleteQna(access, refresh, qid){
     const db = createSupabaseWithToken(access, refresh);
     const {data:deleted, error} = await db.from(TABLE)
     .delete()
-    .eq("id", sid)
+    .eq("id", qid)
     .select();
 
     if(error){
@@ -65,4 +66,45 @@ async function deleteQna(access, refresh, sid){
         return deleted;
     }
 }
-module.exports = {getQna, getQnas, addQna, deleteQna}
+
+async function getQnaBySessionId(access, refresh, sid){
+    const db = createSupabaseWithToken(access, refresh);
+
+    
+  const { data: Qnas, error } = await db.from(TABLE)
+    .select(`
+      id,
+      session_id,
+      qid,
+      aid,
+      created_at,
+      questionText:question(questionText)
+    `)
+    .eq("session_id", sid)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log("GET q Qnas err:", error);
+    return null;
+  }
+
+  const mapped = await Promise.all(
+    Qnas.map(async (q) => {
+      const answerData = await getAnswer(q.aid);
+
+      return {
+        id: q.id,
+        session_id: q.session_id,
+        qid: q.qid,
+        aid: q.aid,
+        created_at: q.created_at,
+        questionText: q.questionText.questionText,
+        answerText: answerData?.answerText ?? null,
+      };
+    })
+  );
+
+  console.log("GET q Qnas OKAY:", JSON.stringify(mapped));
+  return mapped;
+}
+module.exports = {getQna, getQnas, addQna, deleteQna, getQnaBySessionId}

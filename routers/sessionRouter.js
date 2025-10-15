@@ -1,7 +1,7 @@
 const express = require('express');
 const {requireAuthCheck} = require('../routers/auth')
 const {requireDBUser} = require('../services/user')
-const {getSession, getSessions, addSession, deleteSession, completeSession, getLastCompletedSession} = require('../services/sessionService')
+const {getSession, getSessions, addSession, deleteSession, completeSession, getLastCompletedSession, getAllCompletedSession} = require('../services/sessionService')
 
 const sessionRouter = express.Router();
 sessionRouter.use(express.json());
@@ -32,6 +32,18 @@ sessionRouter.get("/", async (req, res)=>{
         res.status(200).json(sessions);
     }else{
         console.log("FAILED R GET sessions")
+        res.status(500).json({message:"failed to get sessions"})
+    }
+})
+sessionRouter.get("/all", async (req, res)=>{
+    const access = req.access;
+    const refresh = req.refresh;
+    const sessions = await getAllCompletedSession(access,refresh);
+    if(sessions != null){
+        console.log("R GET Sessions c: ", sessions.length);
+        res.status(200).json(sessions);
+    }else{
+        console.log("FAILED R GET sessions c")
         res.status(500).json({message:"failed to get sessions"})
     }
 })

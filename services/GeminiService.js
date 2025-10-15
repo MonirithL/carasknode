@@ -71,7 +71,7 @@ Return ONLY the JSON array, with no extra text, explanation, or markdown formatt
 }
 
 async function genResult(qna_full){
-  const basePrompt = "Generate a JSON array of 6 careers that a person might fit and another 3 careers that they should avoid with 3 reasons why and why not. They answered some questions like below."
+  // const basePrompt = "Generate a JSON array of 6 careers that a person might fit and another 3 careers that they should avoid with 3 reasons why and why not. They answered some questions like below."
   const prompt = `This is a Q&A pair of the person:
   ${JSON.stringify(qna_full, null, 2)}
   
@@ -88,7 +88,7 @@ async function genResult(qna_full){
   * the title or careers should be ordered from best to worst
   *"job title", true and reason1, reason2, reason3 are examples. Each reason should be maximum words of 8 words.
 
-  Return only the JSON, with no extra text, explanation,, or markdown formatting.`
+  Return only the JSON, with no extra text, explanation,, or markdown formatting.`;
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -114,4 +114,111 @@ async function genResult(qna_full){
   }
 }
 
-module.exports = {getText, genResult, getRecommended}
+async function genExplore(termsArr){
+  const prompt = `Generate and array of careers that fit search array below and Please generate it QUICKLY and not too much word, try to get it on first try:
+  ${JSON.stringify(termsArr)}
+  
+  Output requirement: should have an array of 10 careers and a prompt for users to do next;
+  {
+    prompter:"some prompt about 3-6, example: 'try adding your experience', 'what is your hobby?'....",
+    careers: [
+    "title":"job title(string)",
+    "description":"short 3-6 words description of the job(string)",
+    "requirements":[
+        "requirement1(string)", "requirement2(string)"
+    ]
+  }
+  * the title or careers should be ordered from best mataching to worst
+  
+
+  Return only the JSON, with no extra text, explanation, or markdown formatting.`
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config:{"response_mime_type": "application/json"}
+    });
+
+    if (response && response.text && response.text.length > 0) {
+        try{
+            const text = response.text.replace(/```json|```/g, "").trim();
+            const json_text = JSON.parse(text);
+            return (json_text)
+        }catch(error){
+            console.log("GEMINI genResult NOT json ",error)
+        }
+      return response.text
+    } else {
+      return "Gemini returned empty response";
+    }
+  } catch (error) {
+    console.error("Gemini error:", error);
+    return "Gemini not gen Explore working";
+  }
+}
+async function genSeemore(title, goal, qnaArrays, tasksArr) {
+  // 🛡️ Safety guards
+  const safeTitle = title ?? "Unknown Title";
+  const safeGoalCareer = goal?.career ?? null;
+  const safeQna = Array.isArray(qnaArrays) ? qnaArrays : [];
+  const safeTasks = Array.isArray(tasksArr) ? tasksArr : [];
+
+  // 🧠 Null behavior: if goal is missing, skip reasoning sections
+  const hasGoal = !!goal;
+
+  const prompt = `
+Given this data:
+- QnA: ${JSON.stringify(safeQna, null, 2)}
+- Goal: ${safeGoalCareer ?? "null"}
+- Target: ${safeTitle}
+- Completed Tasks: ${JSON.stringify(safeTasks)}
+
+Generate JSON in this exact format:
+{
+  "title": "${safeTitle}",
+  "goal": ${safeGoalCareer ? `"${safeGoalCareer}"` : null},
+  "description": "Short description for ${safeTitle}",
+  "whyFit": ${hasGoal ? "string[]" : "null"},
+  "whyNotFit": ${hasGoal ? "string[]" : "null"},
+  "requirements": "string[]",
+  "transitioning": ${hasGoal ? "string[]" : "null"},
+  "transitioning_diff": ${hasGoal ? "string" : "null"}
+}
+
+Rules:
+- If goal is null → whyFit, whyNotFit, transitioning, transitioning_diff = null.
+- Each list: 3–6 short items (4–6 words max).
+- transitioning_diff ∈ ["seamless","easy","medium","hard","very hard"].
+- Requirements: measurable.
+- Tasks must not repeat items from Completed Tasks.
+- Return **only JSON**, no markdown or text.
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: { response_mime_type: "application/json" },
+    });
+
+    if (response && response.text && response.text.length > 0) {
+      try {
+        const text = response.text.replace(/```json|```/g, "").trim();
+        const jsonText = JSON.parse(text);
+        return jsonText;
+      } catch (error) {
+        console.log("⚠️ Gemini genSeemore returned non-JSON:", error);
+        return { error: "Invalid JSON returned from Gemini" };
+      }
+    } else {
+      return { error: "Gemini returned an empty response" };
+    }
+  } catch (error) {
+    console.error("❌ Gemini error:", error);
+    return { error: "Gemini generation failed" };
+  }
+}
+
+
+
+module.exports = {getText, genResult, getRecommended,genExplore, genSeemore}

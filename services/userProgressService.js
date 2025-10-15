@@ -22,6 +22,7 @@ async function getProgresses(access, refresh){
 
     const {data: Progresss, error} = await db.from(TABLE)
     .select('*')
+    .order('completed', { ascending: true })
     .order('created_at', {ascending:false});
 
     if(error){

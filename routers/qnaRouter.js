@@ -1,13 +1,27 @@
 const express = require('express');
 const {requireDBUser} = require('../services/user')
 const {requireAuthCheck} = require('../routers/auth')
-const {getQna, getQnas, addQna, deleteQna} = require('../services/userQnAService')
+const {getQna, getQnas, addQna, deleteQna, getQnaBySessionId} = require('../services/userQnAService')
 const qnaRouter = express.Router();
 qnaRouter.use(express.json());
 qnaRouter.use(requireAuthCheck);
 qnaRouter.use(requireDBUser);
 
 
+qnaRouter.get("/all/:id", async (req, res)=>{
+    const sid = req.params.id;
+    const refresh =req.refresh;
+    const access = req.access;
+    const qna = await getQnaBySessionId(access, refresh, sid);
+
+    if(qna != null){
+        console.log("R GET qna: ", qna);
+        res.status(200).json(qna);
+    }else{
+        console.log("FAILED R GET qna")
+        res.status(500).json({message:"failed to get qna"})
+    }
+})
 qnaRouter.get("/:id", async (req, res)=>{
     const qna_id = req.params.id;
     const refresh =req.refresh;

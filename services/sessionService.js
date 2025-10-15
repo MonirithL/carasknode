@@ -99,4 +99,20 @@ async function getLastCompletedSession(access, refresh){
     }
 
 }
-module.exports = {getSession, getSessions, addSession, deleteSession, completeSession, getLastCompletedSession}
+async function getAllCompletedSession(access, refresh){
+    const db = createSupabaseWithToken(access, refresh);
+
+    const {data: sessions, error} = await db.from(TABLE)
+    .select('*')
+    .eq('completed', true)
+    .order('created_at', {ascending:false})
+
+    if(error){
+        console.log("GET competed sessions err: ", error);
+        return null;
+    }else{
+        console.log("GET completed sessions OKAY");
+        return sessions
+    }
+}
+module.exports = {getSession, getSessions, addSession, deleteSession, completeSession, getLastCompletedSession, getAllCompletedSession}
