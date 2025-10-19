@@ -26,24 +26,24 @@ const resultRouter = require('./routers/userResultRouter')
 const progressRouter = require('./routers/userProgressRouter')
 
 app.use(cookieParser());
-app.use('/auth', authRouter);
-app.use('/test', testRouter);
-app.use('/user',userRouter);
-app.use("/gemini", geminiRouter);
-app.use("/session", sessionRouter);
-app.use("/qna", qnaRouter);
-app.use("/question", questionRouter);
-app.use("/goal", goalRouter);
-app.use("/result", resultRouter);
-app.use("/progress", progressRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/test', testRouter);
+app.use('/api/user',userRouter);
+app.use("/api/gemini", geminiRouter);
+app.use("/api/session", sessionRouter);
+app.use("/api/qna", qnaRouter);
+app.use("/api/question", questionRouter);
+app.use("/api/goal", goalRouter);
+app.use("/api/result", resultRouter);
+app.use("/api/progress", progressRouter);
 const PORT = 3000;
 
 
-app.get('/', (req, res, ) => {
+app.get('/api/', (req, res, ) => {
   res.send("First message before hello b")
 })
 
-app.get("/logs", (req, res) => {
+app.get("/api/logs", (req, res) => {
   const filePath = path.join(__dirname, "logs/combined_log.json");
 
   try {
@@ -73,8 +73,8 @@ app.get("/logs", (req, res) => {
 if(process.env.NODE_ENV === "production"){
   https.createServer(
     {
-      key: fs.readFileSync('./certs/192.168.201.52-key.pem'),
-      cert: fs.readFileSync('./certs/192.168.201.52.pem')
+      key: fs.readFileSync(process.env.KEY),
+      cert: fs.readFileSync(process.env.CERT)
     },
     app
   ).listen(PORT,RUNHOST,()=>console.log(`index js listening on port https://localhost:${PORT}/`));
@@ -83,7 +83,5 @@ if(process.env.NODE_ENV === "production"){
       console.log(`index js listening on port http://localhost:${PORT}/`);
   })
 }
-// app.listen(PORT,()=>{
-//     console.log(`index js listening on port http://localhost:${PORT}/`);
-// })
+
 
