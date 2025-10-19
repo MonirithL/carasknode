@@ -10,8 +10,10 @@ authRouter.use(express.json());
 
 const SECRET = process.env.JWT_SECRET;
 // need passport oauth, jwt
-const SET_HTTPS = process.env.NODE_ENV === 'production';
-const SAMESITE = process.env.NODE_ENV == 'production'?"none":"lax";
+const SET_HTTPS = process.env.NODE_ENV === true;
+const SAMESITE = process.env.NODE_ENV == 'none';
+// const SET_HTTPS = process.env.NODE_ENV === 'production';
+// const SAMESITE = process.env.NODE_ENV == 'production'?"none":"lax";
 
 
 async function requireAuthCheck(req, res, next) {

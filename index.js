@@ -77,7 +77,7 @@ if(process.env.NODE_ENV === "production"){
       cert: fs.readFileSync(process.env.CERT)
     },
     app
-  ).listen(PORT,RUNHOST,()=>console.log(`index js listening on port https://localhost:${PORT}/`));
+  ).listen(PORT,()=>console.log(`index js listening on port https://localhost:${PORT}/`));
 }else{
   app.listen(PORT, RUNHOST,()=>{
       console.log(`index js listening on port http://localhost:${PORT}/`);
