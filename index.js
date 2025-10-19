@@ -15,7 +15,7 @@ app.use(cors({
 }))
 
 const {authRouter} = require(`./routers/auth`);
-const testRouter = require('./test')
+
 const {userRouter} = require('./routers/user')
 const geminiRouter = require('./routers/geminiRouter')
 const sessionRouter = require('./routers/sessionRouter')
@@ -27,7 +27,7 @@ const progressRouter = require('./routers/userProgressRouter')
 
 app.use(cookieParser());
 app.use('/api/auth', authRouter);
-app.use('/api/test', testRouter);
+
 app.use('/api/user',userRouter);
 app.use("/api/gemini", geminiRouter);
 app.use("/api/session", sessionRouter);
@@ -38,7 +38,7 @@ app.use("/api/result", resultRouter);
 app.use("/api/progress", progressRouter);
 const PORT = 3000;
 
-
+app.use(express.static(path.join(__dirname, "dist")));
 app.get('/api/', (req, res, ) => {
   res.send("First message before hello b")
 })
