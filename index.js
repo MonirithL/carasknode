@@ -39,9 +39,7 @@ app.use("/api/progress", progressRouter);
 const PORT = 3000;
 
 app.use(express.static(path.join(__dirname, "dist")));
-app.get("/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
+
 app.get('/api/', (req, res, ) => {
   res.send("First message before hello b")
 })
@@ -70,7 +68,9 @@ app.get("/api/logs", (req, res) => {
 });
 
 
-
+app.get(/(.*)/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
 
 if(process.env.NODE_ENV === "production"){
