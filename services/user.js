@@ -13,7 +13,7 @@ async function requireDBUser(req,res,next){
         const db_user = await getUser(user_auth_id, token, refresh);
         req.db_user = db_user;
         if(db_user==null)return res.status(403).json({ error: "Invalid or unknown user" });
-        
+        console.log("GET USER: ", JSON.stringify(db_user))
         return next();
     }else{
         req.db_user = null;
@@ -112,5 +112,48 @@ async function updateUser(auth_id, token, refresh, usernameN, profile_imgN) {
     return data;
   }
 }
+async function changePaymentStatus(
+  access, refresh, auth_id,
+  { paidPersonal, paidGroup, paidFor, name, profile_img } = {}
+) {
+  try {
+    const supabase = createSupabaseWithToken(access,refresh);
 
-module.exports = {createUser, getUser, requireDBUser, updateUser}
+    // Build the update object dynamically
+    const updateObj = {};
+
+    if (typeof paidPersonal !== "undefined") updateObj.paidPersonal = paidPersonal;
+    if (typeof paidGroup !== "undefined") updateObj.paidGroup = paidGroup;
+    if (typeof paidFor !== "undefined") updateObj.paidFor = paidFor;
+    if (typeof name !== "undefined") updateObj.name = name;
+    if (typeof profile_img !== "undefined") updateObj.profile_img = profile_img;
+
+    // Nothing to update → return null
+    if (Object.keys(updateObj).length === 0) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("dataUser")
+      .update(updateObj)
+      .eq("auth_id", auth_id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("UPDATE USER ERROR:", error);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("SERVICE ERROR (changePaymentStatus):", err);
+    return null;
+  }
+}
+
+
+
+
+
+module.exports = {createUser, getUser, requireDBUser, updateUser, changePaymentStatus}

@@ -1,6 +1,6 @@
 const express = require('express');
 const {requireAuthCheck} = require('../routers/auth');
-const {getUser, requireDBUser,updateUser} = require('../services/user')
+const {getUser, requireDBUser,updateUser, changePaymentStatus} = require('../services/user')
 
 const userRouter = express.Router();
 userRouter.use(express.json());
@@ -62,6 +62,30 @@ userRouter.put("/update", requireDBUser, async (req, res) => {
   } catch (err) {
     console.error("Error updating user:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+userRouter.put("/payment", requireDBUser, async (req, res) => {
+  try {
+    const { access, refresh } = req;
+    const db_user = req.db_user;
+    const { paidPersonal, paidGroup, paidFor } = req.body;
+
+    // Pass as one object
+    const updatedUser = await changePaymentStatus(access, refresh, db_user.auth_id,{
+      paidPersonal,
+      paidGroup,
+      paidFor,
+    });
+
+    if (!updatedUser) {
+      return res.status(400).json({ message: "Nothing updated or user not found." });
+    }
+
+    return res.json({ user: updatedUser });
+  } catch (err) {
+    console.error("Error updating payment:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 module.exports = {userRouter}
