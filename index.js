@@ -24,6 +24,7 @@ const questionRouter = require('./routers/questionRouter')
 const goalRouter = require('./routers/userGoalRouter')
 const resultRouter = require('./routers/userResultRouter')
 const progressRouter = require('./routers/userProgressRouter')
+const imageRouter = require("./routers/imageRouter")
 
 app.use(cookieParser());
 app.use('/api/auth', authRouter);
@@ -36,6 +37,7 @@ app.use("/api/question", questionRouter);
 app.use("/api/goal", goalRouter);
 app.use("/api/result", resultRouter);
 app.use("/api/progress", progressRouter);
+app.use("/api/image", imageRouter);
 const PORT = 3000;
 
 app.use(express.static(path.join(__dirname, "dist")));
