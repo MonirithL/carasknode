@@ -59,6 +59,7 @@ async function getResultBySessionID(access, refresh, sid){
     .from(TABLE)
     .select("*")
     .eq("session_id", sid)
+    .limit(1)
     .maybeSingle();
 
     if (selectError) {

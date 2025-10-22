@@ -1,4 +1,5 @@
 const {GoogleGenAI} = require("@google/genai")
+const Model = "gemini-2.5-flash"
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY,
 });
@@ -14,7 +15,7 @@ Return ONLY the JSON array, with no extra text, explanation, or markdown formatt
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: Model,
       contents: prompt,
       config:{"response_mime_type": "application/json"}
     });
@@ -47,7 +48,7 @@ Return ONLY the JSON array, with no extra text, explanation, or markdown formatt
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: Model,
       contents: prompt,
       config:{"response_mime_type": "application/json"}
     });
@@ -89,29 +90,62 @@ async function genResult(qna_full){
   *"job title", true and reason1, reason2, reason3 are examples. Each reason should be maximum words of 8 words.
 
   Return only the JSON, with no extra text, explanation,, or markdown formatting.`;
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config:{"response_mime_type": "application/json"}
-    });
+  // try {
+  //   const response = await ai.models.generateContent({
+  //     model: Model,
+  //     contents: prompt,
+  //     config:{"response_mime_type": "application/json"}
+  //   });
 
-    if (response && response.text && response.text.length > 0) {
-        try{
-            const text = response.text.replace(/```json|```/g, "").trim();
-            const json_text = JSON.parse(text);
-            return ({result:json_text})
-        }catch(error){
-            console.log("GEMINI genResult NOT json ",error)
-        }
-      return response.text
-    } else {
-      return "Gemini returned empty response";
+  //   if (response && response.text && response.text.length > 0) {
+  //       try{
+  //           const text = response.text.replace(/```json|```/g, "").trim();
+  //           const json_text = JSON.parse(text);
+  //           return ({result:json_text})
+  //       }catch(error){
+  //           console.log("GEMINI genResult NOT json ",error)
+  //       }
+  //     return response.text
+  //   } else {
+  //     return "Gemini returned empty response";
+  //   }
+  // } catch (error) {
+  //   console.error("Gemini error:", error);
+  //   return "Gemini not gen Result working";
+  // }
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const maxRetries = 3;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: Model,
+        contents: prompt,
+        config: { response_mime_type: "application/json" },
+      });
+
+      if (!response?.text || response.text.length === 0) {
+        console.warn(`⚠️ Attempt ${attempt}: Empty response, retrying...`);
+        await delay(200);
+        continue;
+      }
+
+      const text = response.text.replace(/```json|```/g, "").trim();
+
+      try {
+        const jsonText = JSON.parse(text);
+        return { result: jsonText }; // success, only return on valid JSON
+      } catch {
+        console.warn(`⚠️ Attempt ${attempt}: Invalid JSON, retrying...`);
+        await delay(200);
+      }
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt}: Gemini error, retrying...`, error);
+      await delay(200);
     }
-  } catch (error) {
-    console.error("Gemini error:", error);
-    return "Gemini not gen Result working";
   }
+
+  return { error: "Failed to generate valid JSON after 3 attempts" };
 }
 
 async function genExplore(termsArr){
@@ -134,7 +168,7 @@ async function genExplore(termsArr){
   Return only the JSON, with no extra text, explanation, or markdown formatting.`
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: Model,
       contents: prompt,
       config:{"response_mime_type": "application/json"}
     });
@@ -157,13 +191,10 @@ async function genExplore(termsArr){
   }
 }
 async function genSeemore(title, goal, qnaArrays, tasksArr) {
-  // 🛡️ Safety guards
   const safeTitle = title ?? "Unknown Title";
   const safeGoalCareer = goal?.career ?? null;
   const safeQna = Array.isArray(qnaArrays) ? qnaArrays : [];
   const safeTasks = Array.isArray(tasksArr) ? tasksArr : [];
-
-  // 🧠 Null behavior: if goal is missing, skip reasoning sections
   const hasGoal = !!goal;
 
   const prompt = `
@@ -194,29 +225,40 @@ Rules:
 - Return **only JSON**, no markdown or text.
 `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { response_mime_type: "application/json" },
-    });
+  const delay = (ms) => new Promise(res => setTimeout(res, ms));
+  const maxRetries = 10;
 
-    if (response && response.text && response.text.length > 0) {
-      try {
-        const text = response.text.replace(/```json|```/g, "").trim();
-        const jsonText = JSON.parse(text);
-        return jsonText;
-      } catch (error) {
-        console.log("⚠️ Gemini genSeemore returned non-JSON:", error);
-        return { error: "Invalid JSON returned from Gemini" };
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: Model,
+        contents: prompt,
+        config: { response_mime_type: "application/json" },
+      });
+
+      if (!response?.text || response.text.length === 0) {
+        console.warn(`⚠️ Attempt ${attempt}: Empty response, retrying...`);
+        await delay(500);
+        continue;
       }
-    } else {
-      return { error: "Gemini returned an empty response" };
+
+      const text = response.text.replace(/```json|```/g, "").trim();
+
+      try {
+        const jsonText = JSON.parse(text);
+        return jsonText; // success
+      } catch {
+        console.warn(`⚠️ Attempt ${attempt}: Invalid JSON, retrying...`);
+        await delay(500);
+      }
+
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt}: Gemini generation failed, retrying...`, error);
+      await delay(500);
     }
-  } catch (error) {
-    console.error("❌ Gemini error:", error);
-    return { error: "Gemini generation failed" };
   }
+
+  return { error: "Failed to generate valid JSON after 10 attempts" };
 }
 
 
